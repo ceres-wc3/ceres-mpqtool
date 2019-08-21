@@ -13,6 +13,7 @@ env:
   global:
     # TODO Update this to match the name of your project.
     - CRATE_NAME=ceres-mpqtool
+
 matrix:
   # TODO These are all the build jobs. Adjust as necessary. Comment out what you
   # don't need
@@ -52,7 +53,7 @@ deploy:
   # - Encrypt it: `travis encrypt 0123456789012345678901234567890123456789
   # - Paste the output down here
   api_key:
-    secure: "COSmw83UXOgFo1Sk2ZyhKd8vyDgghf5citVktTkAvjdxp3CC7MZzVQUYAKM72SUWuEe9ojQoBzMmeTEIjq2aCLUXF1jCclZXhgTY8sfSOB7PSDoYKWks7Oy5D7Hf6TiTkenNnLcuyGamk8WGufRCRxq2WZo6FnmTmWS1FFVI7xk2oZjVg7rAg0unXSgXxW+QLQj4mf+lNJVNHs+Ajxm5cZoc5cqD86SyFN6sXC86gUmM07ciloFQWw+EgH5GJ2Cnl0MOL4OR+CPzBO0TCQpHjynclyhXzj5vr+jI4PahLQn1cQwbaLem/drdZOD2Xh2TR2cpfJA3b2s/qHJLeZZfonzysK7X4bYn46N83FNceagTyzRHttJbR6QYm9APCKTsjBrrGkbHy6mGX8bbPrObOs8oXDwwEdiTTWg+Eolf+tEOPWWlebeUgBohrKwIRxb456HuEIyd+ismk2GawvQf2HKmlQbd+CQpl229MxnQ2hvfvUVHb5UXHNc4TKRl6yDqrG4dHuY3cx4f/Mva7VqsFIZObg2lKsqKgC6Rsd2Sq5DgDvFrSBPstXnlrG2k5jJ0qUiRaSLo1Zj5m1lN6oLUBGzDLuDfjfUlW09M+n7kdQp05MYYaXecnew+s5LT0BiTSsoYD5QWiQUNjX8EwLAo3xOnWVi9JNlBty9AdS35IIY="  
+    secure: "FpwWrfwG5PZulm5DItNuB/YKTHdi4KddttvaPyBCqxB4yQPoobd3okXzXm/JAIzKy190jDLxqti8zhZNqoukBJC/o03BbTffcE48y4MIq4wnEB2sxVufs3kq1VMVOKfvAK4dUd1jk6swhnYu9sV7tSjLHITAD91a447WyIzwAmFCWnPuBJyTAiF3q+LUJI1EGFTi/KfUoe1w+YM8e995k1aLJzbNZiGkNovbeV+cSnQ9TWbolWw6Idivgpkm2YnQ/d0YUnZiTpwdFmAMfUU9B8l9PFkH9C5x2i9WBJS4prCA6v8EWLK2RRS5HUld4jwhD2WbpWEyh9ZYig1y+X8ySWhWkV4e90SGmHQfiWDojbEsnpkY6v3Ca4+ewfVyc/sgJKEZ1REWqIiLtJGwwaPKdUFhBHnzHZW7wif7w6VrbqbXMdumXTymM3bxvcCvSEvCl1VwJVJ9QCg/Mj7NpvOPSGVUKTB0e4L/kqOQ7NggC+rPizhmXBD0s+EqnYM+tFEE1eJmN2dZObPr5vcUiijznzgP7/rU0Z0M1smvbsMGurOLqBEw0ax1LRHw9H90CWcTWakEUP49qk9y21N13n70R+HIRvwk+eUv/4a19aO6ldRre271SnqDRafDJQ9T3VihCtKw7KJrUhThlqwbjXIxvALzvfue3dapcty+w49d4Vg="  
   file_glob: true
   file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
   on:
