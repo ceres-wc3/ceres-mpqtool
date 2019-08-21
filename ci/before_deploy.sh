@@ -21,11 +21,11 @@ main() {
     cross rustc --bin mpqtool --target $TARGET --release -- -C lto -C codegen-units=1
 
     if [ -e "target/$TARGET/release/ceres.exe" ]; then
-        cp target/$TARGET/release/ceres.exe $stage/
+        cp target/$TARGET/release/mpqtool $stage/
     fi
 
     if [ -e "target/$TARGET/release/ceres" ]; then
-        cp target/$TARGET/release/ceres $stage/
+        cp target/$TARGET/release/mpqtool $stage/
     fi
 
     cd $stage
