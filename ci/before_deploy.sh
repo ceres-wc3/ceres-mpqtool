@@ -20,12 +20,12 @@ main() {
     # TODO Update this to build the artifacts that matter to you
     cross rustc --bin mpqtool --target $TARGET --release -- -C lto -C codegen-units=1
 
-    if [ -e "target/$TARGET/release/ceres.exe" ]; then
-        cp target/$TARGET/release/ceres.exe $stage/
+    if [ -e "target/$TARGET/release/mpqtool" ]; then
+        cp target/$TARGET/release/mpqtool $stage/
     fi
 
-    if [ -e "target/$TARGET/release/ceres" ]; then
-        cp target/$TARGET/release/ceres $stage/
+    if [ -e "target/$TARGET/release/mpqtool.exe" ]; then
+        cp target/$TARGET/release/mpqtool.exe $stage/
     fi
 
     cd $stage
