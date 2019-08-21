@@ -20,8 +20,13 @@ main() {
     # TODO Update this to build the artifacts that matter to you
     cross rustc --bin mpqtool --target $TARGET --release -- -C lto -C codegen-units=1
 
-    # TODO Update this to package the right artifacts
-    cp target/$TARGET/release/mpqtool $stage/
+    if [ -e "target/$TARGET/release/ceres.exe" ]; then
+        cp target/$TARGET/release/ceres.exe $stage/
+    fi
+
+    if [ -e "target/$TARGET/release/ceres" ]; then
+        cp target/$TARGET/release/ceres $stage/
+    fi
 
     cd $stage
     tar czf $src/$CRATE_NAME-$TRAVIS_TAG-$TARGET.tar.gz *
