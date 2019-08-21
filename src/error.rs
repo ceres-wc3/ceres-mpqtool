@@ -19,5 +19,12 @@ pub enum ToolError {
     #[error(display = "Error while reading file from MPQ archive: {}", cause)]
     MpqReadFileError {
         cause: MpqError
-    }
+    },
+    #[error(display = "Listfile not found in archive")]
+    ListfileNotFound,
+    #[error(display = "Could not create output directory [{:?}]: {}", path, cause)]
+    OutDirCreationError {
+        cause: IoError,
+        path: PathBuf
+    },
 }

@@ -4,17 +4,16 @@ version = "0.1.0"
 authors = ["ElusiveMori <mori@reu.moe>"]
 description = "A command-line tool for reading and creating Blizzard's MPQ archives"
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+readme = "README.md"
+repository = "https://github.com/ElusiveMori/ceres-mpqtool"
+keywords = ["mpq", "blizzard", "mopaq", "warcraft"]
+categories = ["encoding", "parsing", "command-line-utilities"]
+license = "MIT"
 
 [dependencies]
-ceres-mpq = "0.1.0"
-clap = "2"
+ceres-mpq = "0.1.2"
+clap = "2.33.0"
 err-derive = "0.1.5"
-
-[patch.crates-io]
-ceres-mpq = {path = "../ceres-mpq"}
-
-[profile.release]
-lto = true
-codegen-units = 1
+glob = "0.3.0"
+walkdir = "2.2.9"
+path-absolutize = "1.1.6"

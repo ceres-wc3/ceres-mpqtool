@@ -3,14 +3,19 @@ use std::fs;
 use std::io;
 use std::io::BufReader;
 use std::io::Write;
-
-use clap::{
-    app_from_crate, crate_authors, crate_description, crate_name, crate_version, AppSettings, Arg,
-    ArgMatches, SubCommand,
-};
+use std::path::Path;
+use std::path::PathBuf;
+use std::str::FromStr;
 
 use ceres_mpq::*;
+use clap::{app_from_crate, crate_authors, crate_description, crate_name, crate_version};
+use clap::{AppSettings, Arg, ArgMatches, SubCommand};
+use glob::Pattern as GlobPattern;
+use walkdir::WalkDir;
+use path_absolutize::Absolutize;
+
 mod error;
+
 use error::ToolError;
 
 pub type AnyError = Box<dyn Error>;
@@ -21,6 +26,7 @@ fn main() {
         .setting(AppSettings::DisableHelpSubcommand)
         .setting(AppSettings::GlobalVersion)
         .setting(AppSettings::ColorNever)
+        .setting(AppSettings::VersionlessSubcommands)
         .subcommand(
             SubCommand::with_name("extract")
                 .about("extracts files from an archive")
@@ -70,6 +76,46 @@ fn main() {
                         .required(true)
                 )
         )
+        .subcommand(
+            SubCommand::with_name("list")
+                .about("lists files in an archive")
+                .arg(
+                    Arg::with_name("archive")
+                        .index(1)
+                        .value_name("archive")
+                        .help("archive file to extract from")
+                        .takes_value(true)
+                        .required(true),
+                )
+                .arg(
+                    Arg::with_name("filter")
+                        .short("f")
+                        .long("filter")
+                        .value_name("pattern")
+                        .help("glob pattern to filter files with")
+                        .takes_value(true)
+                )
+        )
+        .subcommand(
+            SubCommand::with_name("new")
+                .about("creates a new archive")
+                .arg(
+                    Arg::with_name("input")
+                        .value_name("dir")
+                        .index(1)
+                        .help("directory to create an archive from")
+                        .takes_value(true)
+                        .required(true)
+                )
+                .arg(
+                    Arg::with_name("output")
+                        .index(2)
+                        .value_name("archive")
+                        .help("output file to write to")
+                        .takes_value(true)
+                        .required(true),
+                )
+        )
         .get_matches_safe();
 
     let result = match matches {
@@ -77,7 +123,8 @@ fn main() {
         Ok(matches) => match matches.subcommand() {
             ("extract", Some(matches)) => command_extract(matches),
             ("view", Some(matches)) => command_view(matches),
-            ("create", Some(matches)) => command_create(matches),
+            ("list", Some(matches)) => command_list(matches),
+            ("new", Some(matches)) => command_new(matches),
             (cmd, _) => {
                 eprintln!("Unknown subcommand {} encountered", cmd);
                 std::process::exit(1)
@@ -86,11 +133,47 @@ fn main() {
     };
 
     if let Err(error) = result {
-        eprintln!("An error occured: {}", error);
+        eprintln!("ERROR: {}", error);
     }
 }
 
 fn command_extract(matches: &ArgMatches) -> Result<(), AnyError> {
+    let pattern = pattern_from_matches(matches)?;
+    let archive_path = matches.value_of("archive").unwrap();
+    let out_dir: PathBuf = matches.value_of("output").unwrap().into();
+
+    let archive_file = open_readonly_file(archive_path)?;
+    let mut archive =
+        Archive::open(archive_file).map_err(|cause| ToolError::MpqOpenError { cause })?;
+
+    let listfile = archive.files().ok_or(ToolError::ListfileNotFound)?;
+    let files = listfile.iter().map(|s| s.replace("\\", "/"));
+
+    create_dir(&out_dir)?;
+
+    for file in files {
+        if let Some(pattern) = &pattern {
+            if !pattern.matches(&file) {
+                continue;
+            }
+        }
+
+        let path = PathBuf::from_str(&file).unwrap();
+        let file_result = archive.read_file(&file);
+
+        match file_result {
+            Ok(contents) => {
+                let out_path = out_dir.join(path);
+                let out_path_dir = out_path.parent().unwrap();
+                create_dir(out_path_dir)?;
+                if let Err(error) = fs::write(&out_path, contents) {
+                    eprintln!("Could not write file {}: {}", out_path.display(), error)
+                }
+            }
+            Err(error) => eprintln!("Could not extract file {}: {}", file, error),
+        }
+    }
+
     Ok(())
 }
 
@@ -98,13 +181,7 @@ fn command_view(matches: &ArgMatches) -> Result<(), AnyError> {
     let archive_path = matches.value_of("archive").unwrap();
     let filename = matches.value_of("file").unwrap();
 
-    let archive_file = fs::OpenOptions::new()
-        .read(true)
-        .open(archive_path)
-        .map_err(|cause| ToolError::FileOpenError {
-            path: archive_path.into(),
-            cause,
-        })?;
+    let archive_file = open_readonly_file(archive_path)?;
     let archive_file = BufReader::new(archive_file);
 
     let mut archive =
@@ -121,6 +198,112 @@ fn command_view(matches: &ArgMatches) -> Result<(), AnyError> {
     Ok(())
 }
 
-fn command_create(matches: &ArgMatches) -> Result<(), AnyError> {
+fn command_list(matches: &ArgMatches) -> Result<(), AnyError> {
+    let pattern = pattern_from_matches(matches)?;
+    let archive_path = matches.value_of("archive").unwrap();
+    let archive_file = open_readonly_file(archive_path)?;
+    let mut archive =
+        Archive::open(archive_file).map_err(|cause| ToolError::MpqOpenError { cause })?;
+
+    let listfile = archive.files().ok_or(ToolError::ListfileNotFound)?;
+
+    let files = listfile.iter().map(|s| s.replace("\\", "/"));
+
+    if let Some(pattern) = pattern {
+        for file in files {
+            if pattern.matches(&file) {
+                println!("{}", file);
+            }
+        }
+    } else {
+        for file in files {
+            println!("{}", file);
+        }
+    };
+
     Ok(())
+}
+
+fn pattern_from_matches(matches: &ArgMatches) -> Result<Option<GlobPattern>, AnyError> {
+    let pattern = matches.value_of("filter").map(|s| GlobPattern::new(s));
+
+    let pattern = match pattern {
+        None => None,
+        Some(Err(error)) => return Err(Box::new(error)),
+        Some(Ok(pattern)) => Some(pattern),
+    };
+
+    Ok(pattern)
+}
+
+fn command_new(matches: &ArgMatches) -> Result<(), AnyError> {
+    let output_path = matches.value_of("output").unwrap();
+    let input_dir = matches.value_of("input").unwrap();
+
+    let output_file = open_write_file(output_path)?;
+    let input_dir_absolute = PathBuf::from_str(input_dir)?.absolutize()?;
+
+    let mut creator = Creator::default();
+    let file_options = FileOptions {
+        encrypt: false,
+        compress: true,
+        adjust_key: false,
+    };
+
+    for entry in WalkDir::new(input_dir).follow_links(true) {
+        match entry {
+            Ok(entry) => if entry.file_type().is_file() {
+                let path = entry.path().absolutize()?;
+                let relative_path = path.strip_prefix(&input_dir_absolute)?;
+
+                dbg!(relative_path.to_str());
+
+                let file_contents = match fs::read(&path) {
+                    Ok(contents) => contents,
+                    Err(error) => {
+                        eprintln!("Could not add file {}: {}", path.display(), error);
+                        continue
+                    }
+                };
+
+                creator.add_file(relative_path.to_str().unwrap(), file_contents, file_options);
+            },
+            Err(error) => eprintln!("{}", error),
+        }
+    }
+
+    if let Err(error) = creator.write(output_file) {
+        eprintln!("Failed to create archive: {}", error);
+    }
+
+    Ok(())
+}
+
+fn open_readonly_file(path: &str) -> Result<fs::File, ToolError> {
+    fs::OpenOptions::new()
+        .read(true)
+        .open(path)
+        .map_err(|cause| ToolError::FileOpenError {
+            path: path.into(),
+            cause,
+        })
+}
+
+fn open_write_file(path: &str) -> Result<fs::File, ToolError> {
+    fs::OpenOptions::new()
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .open(path)
+        .map_err(|cause| ToolError::FileOpenError {
+            path: path.into(),
+            cause,
+        })
+}
+
+fn create_dir<P: AsRef<Path>>(dir: P) -> Result<(), ToolError> {
+    fs::create_dir_all(&dir).map_err(|error| ToolError::OutDirCreationError {
+        cause: error,
+        path: dir.as_ref().to_owned(),
+    })
 }
