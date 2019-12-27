@@ -163,7 +163,7 @@ dependencies = [
 
 [[package]]
 name = "mpqtool"
-version = "0.1.1"
+version = "0.1.2-alpha.0"
 dependencies = [
  "ceres-mpq 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
