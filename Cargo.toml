@@ -1,6 +1,6 @@
 [package]
 name = "mpqtool"
-version = "0.1.1-alpha.0"
+version = "0.1.1"
 authors = ["ElusiveMori <mori@reu.moe>"]
 description = "A command-line tool for reading and creating Blizzard's MPQ archives"
 edition = "2018"
