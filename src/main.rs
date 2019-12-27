@@ -241,7 +241,7 @@ fn command_new(matches: &ArgMatches) -> Result<(), AnyError> {
     let input_dir = matches.value_of("input").unwrap();
 
     let output_file = open_write_file(output_path)?;
-    let input_dir_absolute = PathBuf::from_str(input_dir)?.absolutize()?;
+    let input_dir_absolute = PathBuf::from_str(input_dir).unwrap().absolutize()?;
 
     let mut creator = Creator::default();
     let file_options = FileOptions {
