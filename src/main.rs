@@ -147,13 +147,13 @@ fn command_extract(matches: &ArgMatches) -> Result<(), AnyError> {
         Archive::open(archive_file).map_err(|cause| ToolError::MpqOpenError { cause })?;
 
     let listfile = archive.files().ok_or(ToolError::ListfileNotFound)?;
-    let files = listfile.iter().map(|s| s.replace("\\", "/"));
+    let files = listfile.iter().map(|s| (s, s.replace("\\", "/")));
 
     create_dir(&out_dir)?;
 
-    for file in files {
+    for (file, file_normalized) in files {
         if let Some(pattern) = &pattern {
-            if !pattern.matches(&file) {
+            if !pattern.matches(&file_normalized) {
                 continue;
             }
         }
