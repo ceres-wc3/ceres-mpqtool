@@ -158,7 +158,7 @@ fn command_extract(matches: &ArgMatches) -> Result<(), AnyError> {
             }
         }
 
-        let path = PathBuf::from_str(&file).unwrap();
+        let path = PathBuf::from_str(&file_normalized).unwrap();
         let file_result = archive.read_file(&file);
 
         match file_result {
@@ -255,8 +255,6 @@ fn command_new(matches: &ArgMatches) -> Result<(), AnyError> {
             Ok(entry) => if entry.file_type().is_file() {
                 let path = entry.path().absolutize()?;
                 let relative_path = path.strip_prefix(&input_dir_absolute)?;
-
-                dbg!(relative_path.to_str());
 
                 let file_contents = match fs::read(&path) {
                     Ok(contents) => contents,
