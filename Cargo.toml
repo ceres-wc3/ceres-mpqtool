@@ -11,9 +11,9 @@ categories = ["encoding", "parsing", "command-line-utilities"]
 license = "MIT"
 
 [dependencies]
-ceres-mpq = "0.1.6"
+ceres-mpq = "0.1.8"
 clap = "2.33.0"
-err-derive = "0.1.5"
+err-derive = "0.2.2"
 glob = "0.3.0"
-walkdir = "2.2.9"
-path-absolutize = "1.1.6"
+walkdir = "2.3.1"
+path-absolutize = "1.1.7"
